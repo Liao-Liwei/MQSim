@@ -38,7 +38,7 @@ namespace SSD_Components
 	class GC_and_WL_Unit_Base : public MQSimEngine::Sim_Object
 	{
 	public:
-		GC_and_WL_Unit_Base(const sim_object_id_type& id, 
+		GC_and_WL_Unit_Base(const sim_object_id_type& id,
 			Address_Mapping_Unit_Base* address_mapping_unit, Flash_Block_Manager_Base* block_manager, TSU_Base* tsu, NVM_PHY_ONFI* flash_controller,
 			GC_Block_Selection_Policy_Type block_selection_policy, double gc_threshold,	bool preemptible_gc_enabled, double gc_hard_threshold,
 			unsigned int channel_count, unsigned int chip_no_per_channel, unsigned int die_no_per_chip, unsigned int plane_no_per_die,
@@ -84,7 +84,7 @@ namespace SSD_Components
 		unsigned int max_ongoing_gc_reqs_per_plane;//This value has two important usages: 1) maximum number of concurrent gc operations per plane, and 2) the value that determines urgent GC execution when there is a shortage of flash blocks. If the block bool size drops below this value, all incomming user writes should be blocked
 
 		//Following variabels are used based on the type of GC block selection policy
-		unsigned int rga_set_size;//The number of random flash blocks that are radnomly selected 
+		unsigned int rga_set_size;//The number of random flash blocks that are radnomly selected
 		Utils::RandomGenerator random_generator;
 		std::queue<Block_Pool_Slot_Type*> block_usage_fifo;
 		unsigned int random_pp_threshold;

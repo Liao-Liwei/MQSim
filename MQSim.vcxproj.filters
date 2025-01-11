@@ -112,9 +112,6 @@
     <ClCompile Include="src\ssd\Address_Mapping_Unit_Base.cpp">
       <Filter>ssd</Filter>
     </ClCompile>
-    <ClCompile Include="src\ssd\Address_Mapping_Unit_Hybrid.cpp">
-      <Filter>ssd</Filter>
-    </ClCompile>
     <ClCompile Include="src\ssd\Address_Mapping_Unit_Page_Level.cpp">
       <Filter>ssd</Filter>
     </ClCompile>
@@ -358,9 +355,6 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="src\ssd\Address_Mapping_Unit_Base.h">
-      <Filter>ssd</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ssd\Address_Mapping_Unit_Hybrid.h">
       <Filter>ssd</Filter>
     </ClInclude>
     <ClInclude Include="src\ssd\Address_Mapping_Unit_Page_Level.h">

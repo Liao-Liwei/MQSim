@@ -30,8 +30,14 @@ namespace SSD_Components
 		unsigned long long WrittenStateBitmap;
 		bool Dirty;
 		CMTEntryStatus Status;
-		std::list<std::pair<LPA_type, CMTSlotType*>>::iterator listPtr;//used for fast implementation of LRU
+
+		std::list<std::pair<LPA_type, CMTSlotType*>>::iterator listPtr;//指向lru中对应cmtnode
 		stream_id_type Stream_id;
+	};
+
+	struct TPSlotType
+	{
+		std::list<std::list<std::pair<LPA_type, CMTSlotType*>>>::iterator tpListPtr;//指向lru中对应tpnode
 	};
 
 	struct GMTEntryType//Entry type for the Global Mapping Table
@@ -40,11 +46,12 @@ namespace SSD_Components
 		uint64_t WrittenStateBitmap;
 		data_timestamp_type TimeStamp;
 	};
-	
+
+	class Address_Mapping_Unit_Page_Level;
 	class Cached_Mapping_Table
 	{
 	public:
-		Cached_Mapping_Table(unsigned int capacity);
+		Cached_Mapping_Table(unsigned int capacity, Address_Mapping_Unit_Page_Level* address_mapping_unit);
 		~Cached_Mapping_Table();
 		bool Exists(const stream_id_type streamID, const LPA_type lpa);
 		PPA_type Retrieve_ppa(const stream_id_type streamID, const LPA_type lpa);
@@ -56,13 +63,17 @@ namespace SSD_Components
 		bool Check_free_slot_availability();
 		void Reserve_slot_for_lpn(const stream_id_type streamID, const LPA_type lpa);
 		CMTSlotType Evict_one_slot(LPA_type& lpa);
-		
+
 		bool Is_dirty(const stream_id_type streamID, const LPA_type lpa);
 		void Make_clean(const stream_id_type streamID, const LPA_type lpa);
 	private:
 		std::unordered_map<LPA_type, CMTSlotType*> addressMap;
-		std::list<std::pair<LPA_type, CMTSlotType*>> lruList;
+		// std::list<std::pair<LPA_type, CMTSlotType*>> lruList; // tpnode内的lru链表
+		std::unordered_map<MVPN_type, TPSlotType*> tpNodeMap;
+		std::list<std::list<std::pair<LPA_type, CMTSlotType*>>> tpLruList; // tpnode间的lru链表
 		unsigned int capacity;
+		unsigned int tpnodeCapacity = 4;//配置tpnode的容量
+		Address_Mapping_Unit_Page_Level* address_mapping_unit;
 	};
 
 	/* Each stream has its own address mapping domain. It helps isolation of GC interference
@@ -78,7 +89,7 @@ namespace SSD_Components
 			Flash_Plane_Allocation_Scheme_Type PlaneAllocationScheme,
 			flash_channel_ID_type* channel_ids, unsigned int channel_no, flash_chip_ID_type* chip_ids, unsigned int chip_no,
 			flash_die_ID_type* die_ids, unsigned int die_no, flash_plane_ID_type* plane_ids, unsigned int plane_no,
-			PPA_type total_physical_sectors_no, LHA_type total_logical_sectors_no, unsigned int sectors_no_per_page);
+			PPA_type total_physical_sectors_no, LHA_type total_logical_sectors_no, unsigned int sectors_no_per_page, Address_Mapping_Unit_Page_Level* address_mapping_unit);
 		~AddressMappingDomain();
 
 		/*Stores the mapping of Virtual Translation Page Number (MVPN) to Physical Translation Page Number (MPPN).
@@ -100,12 +111,12 @@ namespace SSD_Components
 		PPA_type Get_ppa(const bool ideal_mapping, const stream_id_type stream_id, const LPA_type lpa);
 		PPA_type Get_ppa_for_preconditioning(const stream_id_type stream_id, const LPA_type lpa);
 		bool Mapping_entry_accessible(const bool ideal_mapping, const stream_id_type stream_id, const LPA_type lpa);
-	
+
 		std::multimap<LPA_type, NVM_Transaction_Flash*> Waiting_unmapped_read_transactions;
 		std::multimap<LPA_type, NVM_Transaction_Flash*> Waiting_unmapped_program_transactions;
 		std::multimap<MVPN_type, LPA_type> ArrivingMappingEntries;
 		std::set<MVPN_type> DepartingMappingEntries;
-		std::set<LPA_type> Locked_LPAs;//Used to manage race conditions, i.e. a user request accesses and LPA while GC is moving that LPA 
+		std::set<LPA_type> Locked_LPAs;//Used to manage race conditions, i.e. a user request accesses and LPA while GC is moving that LPA
 		std::set<MVPN_type> Locked_MVPNs;//Used to manage race conditions
 		std::multimap<LPA_type, NVM_Transaction_Flash*> Read_transactions_behind_LPA_barrier;
 		std::multimap<LPA_type, NVM_Transaction_Flash*> Write_transactions_behind_LPA_barrier;
@@ -126,6 +137,8 @@ namespace SSD_Components
 		LPA_type Total_logical_pages_no;
 		PPA_type Total_physical_pages_no;
 		MVPN_type Total_translation_pages_no;
+
+		Address_Mapping_Unit_Page_Level* address_mapping_unit;
 	};
 
 	class Address_Mapping_Unit_Page_Level : public Address_Mapping_Unit_Base
@@ -147,7 +160,7 @@ namespace SSD_Components
 		void Execute_simulator_event(MQSimEngine::Sim_Event*);
 
 		void Allocate_address_for_preconditioning(const stream_id_type stream_id, std::map<LPA_type, page_status_type>& lpa_list, std::vector<double>& steady_state_distribution);
-		int Bring_to_CMT_for_preconditioning(stream_id_type stream_id, LPA_type lpa);
+		int Bring_to_CMT_for_preconditioning(stream_id_type stream_id, LPA_type lpa); //对外接口：将lpa加入CMT
 		unsigned int Get_cmt_capacity();
 		unsigned int Get_current_cmt_occupancy_for_stream(stream_id_type stream_id);
 		void Translate_lpa_to_ppa_and_dispatch(const std::list<NVM_Transaction*>& transactionList);
@@ -197,6 +210,8 @@ namespace SSD_Components
 		void manage_mapping_transaction_facing_barrier(stream_id_type stream_id, MVPN_type mvpn, bool read);
 		bool is_lpa_locked_for_gc(stream_id_type stream_id, LPA_type lpa);
 		bool is_mvpn_locked_for_gc(stream_id_type stream_id, MVPN_type mvpn);
+
+		friend class Cached_Mapping_Table;
 	};
 
 }

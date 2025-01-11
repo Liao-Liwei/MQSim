@@ -42,7 +42,6 @@
     <ClCompile Include="src\sim\Engine.cpp" />
     <ClCompile Include="src\sim\EventTree.cpp" />
     <ClCompile Include="src\ssd\Address_Mapping_Unit_Base.cpp" />
-    <ClCompile Include="src\ssd\Address_Mapping_Unit_Hybrid.cpp" />
     <ClCompile Include="src\ssd\Address_Mapping_Unit_Page_Level.cpp" />
     <ClCompile Include="src\ssd\Data_Cache_Flash.cpp" />
     <ClCompile Include="src\ssd\Data_Cache_Manager_Base.cpp" />
@@ -120,7 +119,6 @@
     <ClInclude Include="src\sim\Sim_Object.h" />
     <ClInclude Include="src\sim\Sim_Reporter.h" />
     <ClInclude Include="src\ssd\Address_Mapping_Unit_Base.h" />
-    <ClInclude Include="src\ssd\Address_Mapping_Unit_Hybrid.h" />
     <ClInclude Include="src\ssd\Address_Mapping_Unit_Page_Level.h" />
     <ClInclude Include="src\ssd\Data_Cache_Flash.h" />
     <ClInclude Include="src\ssd\Data_Cache_Manager_Base.h" />

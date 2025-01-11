@@ -15,12 +15,12 @@ namespace SSD_Components
 {
 	FTL::FTL(const sim_object_id_type& id, Data_Cache_Manager_Base* data_cache_manager,
 		unsigned int channel_no, unsigned int chip_no_per_channel, unsigned int die_no_per_chip, unsigned int plane_no_per_die,
-		unsigned int block_no_per_plane, unsigned int page_no_per_block, unsigned int page_size_in_sectors, 
-		sim_time_type avg_flash_read_latency, sim_time_type avg_flash_program_latency, 
+		unsigned int block_no_per_plane, unsigned int page_no_per_block, unsigned int page_size_in_sectors,
+		sim_time_type avg_flash_read_latency, sim_time_type avg_flash_program_latency,
 		double over_provisioning_ratio, unsigned int max_allowed_block_erase_count, int seed) :
 		NVM_Firmware(id, data_cache_manager), random_generator(seed),
 		channel_no(channel_no), chip_no_per_channel(chip_no_per_channel), die_no_per_chip(die_no_per_chip), plane_no_per_die(plane_no_per_die),
-		block_no_per_plane(block_no_per_plane), page_no_per_block(page_no_per_block), page_size_in_sectors(page_size_in_sectors), 
+		block_no_per_plane(block_no_per_plane), page_no_per_block(page_no_per_block), page_size_in_sectors(page_size_in_sectors),
 		avg_flash_read_latency(avg_flash_read_latency), avg_flash_program_latency(avg_flash_program_latency),
 		over_provisioning_ratio(over_provisioning_ratio), max_allowed_block_erase_count(max_allowed_block_erase_count)
 	{
@@ -46,8 +46,10 @@ namespace SSD_Components
 	}
 	void FTL::Perform_precondition(std::vector<Utils::Workload_Statistics*> workload_stats)
 	{
+		//note: 在开始时将地址映射表保存到闪存中。
 		Address_Mapping_Unit->Store_mapping_table_on_flash_at_start();
 
+		//note: 根据提供的负载统计信息（workload_stats），计算出总体的数据传输速率。
 		double overall_rate = 0;
 		for (auto const &stat : workload_stats)
 		{
@@ -81,6 +83,7 @@ namespace SSD_Components
 		{
 			LPA_type no_of_logical_pages_in_steadystate = (LPA_type)(stat->Initial_occupancy_ratio * Address_Mapping_Unit->Get_logical_pages_count(stat->Stream_id));
 
+			//note: 基于初始占用率和其他参数，生成那些将在稳态期间被访问的逻辑页地址，并且这些地址可能根据不同的分布类型（例如随机均匀分布、热/冷数据分布或流式访问模式）来生成。
 			//Step 1: generate LPAs that are accessed in the steady-state
 			Utils::Address_Distribution_Type decision_dist_type = stat->Address_distribution_type;
 			std::map<LPA_type, page_status_type> lpa_set_for_preconditioning;//Stores the accessed LPAs
@@ -141,7 +144,7 @@ namespace SSD_Components
 						if (stat->generate_aligned_addresses)
 							if (max_lha % stat->alignment_value != 0)
 								max_lha -= min_lha % stat->alignment_value;
-						
+
 						max_lpa = Convert_host_logical_address_to_device_address(max_lha);
 					}
 					break;
@@ -247,7 +250,7 @@ namespace SSD_Components
 										start_LBA = hot_region_end_lsa + 1;
 								is_hot_address = false;
 							}
-						}							
+						}
 						else
 						{
 							if (random_hot_cold_generator->Uniform(0, 1) < stat->Ratio_of_hot_addresses_to_whole_working_set)// (100-hot)% of requests going to hot% of the address space
@@ -352,7 +355,7 @@ namespace SSD_Components
 
 				//Step 1-3: Determine the address distribution type of the input trace
 				stat->Address_distribution_type = Utils::Address_Distribution_Type::RANDOM_HOTCOLD;//Initially assume that the trace has hot/cold access pattern
-				
+
 				//First check if there are enough number of write requests in the workload to make a statistically correct decision, if not, MQSim assumes the workload has a uniform access pattern
 				if (stat->Write_address_access_pattern.size() > STATISTICALLY_SUFFICIENT_WRITES_FOR_PRECONDITIONING) {
 					int hot_region_write_count = 0;
@@ -378,7 +381,7 @@ namespace SSD_Components
 							prev_r = r_temp;
 							next_milestone += step;
 						}
-							
+
 						prev_value = (*itr).first;
 					}
 
@@ -395,7 +398,7 @@ namespace SSD_Components
 				Utils::RandomGenerator* random_address_generator = new Utils::RandomGenerator(preconditioning_seed++);
 				unsigned int size = stat->Average_request_size_sector;
 				LHA_type start_LHA = 0;
-				
+
 				//Step 1-4: If both read and write LPAs are not enough for preconditioning flash storage space, then fill the remaining space
 				while (lpa_set_for_preconditioning.size() < no_of_logical_pages_in_steadystate) {
 					start_LHA = random_address_generator->Uniform_ulong(min_lha, max_lha);
@@ -427,7 +430,7 @@ namespace SSD_Components
 					}
 				}
 			}//else of if (stat->Type == Utils::Workload_Type::SYNTHETIC)
-			
+
 			//Step 2: Determine the probability distribution function of valid pages in blocks, in the steady-state.
 			//Note: if hot/cold separation is required, then the following estimations should be changed according to Van Houtd's paper in Performance Evaluation 2014.
 			std::vector<double> steadystate_block_status_probability;//The probability distribution function of the number of valid pages in a block in the steadystate
@@ -470,7 +473,7 @@ namespace SSD_Components
 					}
 					case GC_Block_Selection_Policy_Type::RANDOM_PP://Based on: B. Van Houdt, "A mean field model for a class of garbage collection algorithms in flash-based solid state drives", SIGMETRICS 2013.
 					{
-						//initialize the pdf values 
+						//initialize the pdf values
 						for (unsigned int i = 0; i <= page_no_per_block; i++) {
 							steadystate_block_status_probability.push_back(0);
 						}
@@ -584,11 +587,11 @@ namespace SSD_Components
 					}
 					case GC_Block_Selection_Policy_Type::RANDOM_PP://Based on: B. Van Houdt, "A mean field model for a class of garbage collection algorithms in flash-based solid state drives", SIGMETRICS 2013.
 					{
-						//initialize the pdf values 
+						//initialize the pdf values
 						for (unsigned int i = 0; i <= page_no_per_block; i++) {
 							steadystate_block_status_probability.push_back(0);
 						}
-						
+
 						double rho = stat->Initial_occupancy_ratio * (1 - over_provisioning_ratio);
 						double S_rho_b = 0;
 						for (unsigned int j = GC_and_WL_Unit->Get_GC_policy_specific_parameter() + 1; j <= page_no_per_block; j++) {
@@ -751,7 +754,7 @@ namespace SSD_Components
 			}
 		}
 	}
-	
+
 	void FTL::Report_results_in_XML(std::string name_prefix, Utils::XmlWriter& xmlwriter)
 	{
 		std::string tmp = name_prefix + ".FTL";
