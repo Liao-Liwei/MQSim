@@ -1,11 +1,15 @@
 CC        := g++
 LD        := g++
+# CC        := clang++
+# LD        := clang++
 # CC_FLAGS := -std=c++11 -O3 -g
-CC_FLAGS := -std=c++11 -O0 -g
+CC_FLAGS := -std=c++11 -O0 -g -fsanitize=address
+# CC_FLAGS := -std=c++11 -O0 -g
 
 MODULES   := exec host nvm_chip nvm_chip/flash_memory sim ssd utils
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
 BUILD_DIR := $(addprefix build/,$(MODULES)) build
+LD_FLAGS  := -fsanitize=address
 
 SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.cpp))
 SRC       := src/main.cpp $(SRC)
@@ -24,7 +28,7 @@ endef
 all: checkdirs MQSim
 
 MQSim: $(OBJ)
-	$(LD) $^ -o $@
+	$(LD) $(LD_FLAGS) $^ -o $@
 
 checkdirs: $(BUILD_DIR)
 
