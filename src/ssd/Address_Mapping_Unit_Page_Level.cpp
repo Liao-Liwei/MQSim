@@ -54,9 +54,9 @@ namespace SSD_Components
 		assert(tpNode->second != nullptr);
 		tpLruList.splice(tpLruList.begin(), tpLruList, tpNode->second->tpListPtr);
 
-		auto lruList = *tpNode->second->tpListPtr;
-		//FIXME: 空指针bug,可能是it->second->listPtr为空
-		lruList.splice(lruList.begin(), lruList, it->second->listPtr);
+		auto lruListPtr = tpNode->second->tpListPtr;
+		assert(lruListPtr->size() > 0);
+		lruListPtr->splice(lruListPtr->begin(), *lruListPtr, it->second->listPtr);
 
 
 		return it->second->PPA;
@@ -132,8 +132,7 @@ namespace SSD_Components
 		MVPN_type mvpn = address_mapping_unit->get_MVPN(lpn, streamID);
 		auto tpNode = tpNodeMap.find(mvpn);
 		if (tpNode == tpNodeMap.end()) {
-			std::list<std::pair<LPA_type, CMTSlotType*>>* lruList = new std::list<std::pair<LPA_type, CMTSlotType*>>();
-			tpLruList.push_front(*lruList);
+			tpLruList.emplace_front();
 			tpNodeMap[mvpn] = new TPSlotType();
 			tpNodeMap[mvpn]->tpListPtr = tpLruList.begin();
 			tpNode = tpNodeMap.find(mvpn);
@@ -147,16 +146,17 @@ namespace SSD_Components
 		cmtEnt->Stream_id = streamID;
 		cmtEnt->Status = CMTEntryStatus::WAITING;
 
-		auto lruList = *tpNode->second->tpListPtr;
-		lruList.push_front(std::pair<LPA_type, CMTSlotType*>(key, cmtEnt));
-		cmtEnt->listPtr = lruList.begin();
+		auto &lruList = tpNode->second->tpListPtr;
+		lruList->emplace_front(key, cmtEnt);
+		cmtEnt->listPtr = lruList->begin();
 		addressMap[key] = cmtEnt;
 	}
 
 		CMTSlotType Cached_Mapping_Table::Evict_one_slot(LPA_type& lpa)
 	{
 		assert(addressMap.size() > 0);
-		auto coldestTPnode = tpLruList.back();
+		// allocate here
+		auto &coldestTPnode = tpLruList.back();
 		assert(coldestTPnode.size() > 0);
 
 		std::pair<LPA_type, CMTSlotType*>* evictedItem = nullptr;
@@ -172,18 +172,20 @@ namespace SSD_Components
 		}
 
 		assert(evictedItem != nullptr);
-		coldestTPnode.remove(*evictedItem);
-		addressMap.erase(evictedItem->first);
+		auto re = std::move(*evictedItem->second);
+		lpa = evictedItem->first;
 		auto mvpn = address_mapping_unit->get_MVPN(evictedItem->first, evictedItem->second->Stream_id);
+		delete evictedItem->second;
+
+		//FIXME: heap-use-after-free
+		coldestTPnode.remove(*evictedItem);
 		if (coldestTPnode.size() == 0) {
 			tpNodeMap.erase(mvpn);
-			// delete &coldestTPnode;
 			tpLruList.pop_back();
 		}
+		//free here
+		addressMap.erase(lpa);
 
-		lpa = evictedItem->first;
-		auto re = *evictedItem->second;
-		delete evictedItem->second;
 		return re;
 	}
 
