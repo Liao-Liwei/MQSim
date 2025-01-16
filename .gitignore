@@ -1,3 +1,4 @@
 MQSim
 build/
-
+STATIC_TEST_DATAs/
+workload_scenario*
