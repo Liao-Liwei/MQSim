@@ -48,7 +48,7 @@ namespace SSD_Components
 		assert(it != addressMap.end());
 		assert(it->second->Status == CMTEntryStatus::VALID);
 		lruList.splice(lruList.begin(), lruList, it->second->listPtr);
-		
+
 		return it->second->PPA;
 	}
 
@@ -107,7 +107,7 @@ namespace SSD_Components
 	{
 		return addressMap.size() < capacity;
 	}
-	
+
 	void Cached_Mapping_Table::Reserve_slot_for_lpn(const stream_id_type streamID, const LPA_type lpn)
 	{
 		LPA_type key = LPN_TO_UNIQUE_KEY(streamID, lpn);
@@ -136,7 +136,7 @@ namespace SSD_Components
 		CMTSlotType evictedItem = *lruList.back().second;
 		delete lruList.back().second;
 		lruList.pop_back();
-	
+
 		return evictedItem;
 	}
 
@@ -176,22 +176,22 @@ namespace SSD_Components
 		Total_physical_pages_no = total_physical_sectors_no / sectors_no_per_page;
 		max_logical_sector_address = total_logical_sectors_no;
 		Total_logical_pages_no = (max_logical_sector_address / sectors_no_per_page) + (max_logical_sector_address % sectors_no_per_page == 0? 0 : 1);
-		
+
 		Channel_ids = new flash_channel_ID_type[channel_no];
 		for (flash_channel_ID_type cid = 0; cid < channel_no; cid++) {
 			Channel_ids[cid] = channel_ids[cid];
 		}
-		
+
 		Chip_ids = new flash_chip_ID_type[chip_no];
 		for (flash_chip_ID_type cid = 0; cid < chip_no; cid++) {
 			Chip_ids[cid] = chip_ids[cid];
 		}
-		
+
 		Die_ids = new flash_die_ID_type[die_no];
 		for (flash_die_ID_type did = 0; did < die_no; did++) {
 			Die_ids[did] = die_ids[did];
 		}
-		
+
 		Plane_ids = new flash_plane_ID_type[plane_no];
 		for (flash_plane_ID_type pid = 0; pid < plane_no; pid++) {
 			Plane_ids[pid] = plane_ids[pid];
@@ -382,7 +382,7 @@ namespace SSD_Components
 			domains[domainID] = new AddressMappingDomain(per_stream_cmt_capacity, CMT_entry_size, no_of_translation_entries_per_page,
 				sharedCMT,
 				PlaneAllocationScheme,
-				channel_ids, (unsigned int)(stream_channel_ids[domainID].size()), chip_ids, (unsigned int)(stream_chip_ids[domainID].size()), die_ids, 
+				channel_ids, (unsigned int)(stream_channel_ids[domainID].size()), chip_ids, (unsigned int)(stream_chip_ids[domainID].size()), die_ids,
 				(unsigned int)(stream_die_ids[domainID].size()), plane_ids, (unsigned int)(stream_plane_ids[domainID].size()),
 				Utils::Logical_Address_Partitioning_Unit::PDA_count_allocate_to_flow(domainID), Utils::Logical_Address_Partitioning_Unit::LHA_count_allocate_to_flow_from_device_view(domainID),
 				sector_no_per_page);
@@ -463,7 +463,7 @@ namespace SSD_Components
 				domains[stream_id]->GlobalMappingTable[lpa].PPA, domains[stream_id]->GlobalMappingTable[lpa].WrittenStateBitmap);
 		}
 		domains[stream_id]->No_of_inserted_entries_in_preconditioning++;
-		
+
 		return domains[stream_id]->No_of_inserted_entries_in_preconditioning;
 	}
 
@@ -502,7 +502,7 @@ namespace SSD_Components
 					}
 				}
 			}
-			
+
 			ftl->TSU->Schedule();
 		}
 	}
@@ -593,7 +593,7 @@ namespace SSD_Components
 			Convert_ppa_to_address(transaction->PPA, transaction->Address);
 			block_manager->Read_transaction_issued(transaction->Address);
 			transaction->Physical_address_determined = true;
-			
+
 			return true;
 		} else {//This is a write transaction
 			allocate_plane_for_user_write((NVM_Transaction_Flash_WR*)transaction);
@@ -603,11 +603,11 @@ namespace SSD_Components
 			}
 			allocate_page_in_plane_for_user_write((NVM_Transaction_Flash_WR*)transaction, false);
 			transaction->Physical_address_determined = true;
-			
+
 			return true;
 		}
 	}
-	
+
 	void Address_Mapping_Unit_Page_Level::Allocate_address_for_preconditioning(const stream_id_type stream_id, std::map<LPA_type, page_status_type>& lpa_list, std::vector<double>& steady_state_distribution)
 	{
 		int idx = 0;
@@ -659,7 +659,7 @@ namespace SSD_Components
 						//Adjust the average
 						double model_average = 0;
 						std::vector<double> adjusted_steady_state_distribution;
-						//Check if probability distribution is correct 
+						//Check if probability distribution is correct
 						for (unsigned int i = 0; i <= pages_no_per_block; i++) {
 							model_average += steady_state_distribution[i] * double(i) / double(pages_no_per_block);
 							adjusted_steady_state_distribution.push_back(steady_state_distribution[i]);
@@ -685,7 +685,7 @@ namespace SSD_Components
 							}
 						}
 
-						//Check if it is possible to find a PPA for each LPA with current proability assignments 
+						//Check if it is possible to find a PPA for each LPA with current proability assignments
 						unsigned int total_valid_pages = 0;
 						for (int valid_pages_in_block = pages_no_per_block; valid_pages_in_block >= 0; valid_pages_in_block--) {
 							total_valid_pages += valid_pages_in_block * (unsigned int)(adjusted_steady_state_distribution[valid_pages_in_block] * physical_block_consumption_goal);
@@ -694,7 +694,7 @@ namespace SSD_Components
 						if (total_valid_pages < assigned_lpas[plane_address.ChannelID][plane_address.ChipID][plane_address.DieID][plane_address.PlaneID].size()) {
 							pages_need_PPA = (unsigned int)(assigned_lpas[plane_address.ChannelID][plane_address.ChipID][plane_address.DieID][plane_address.PlaneID].size()) - total_valid_pages;
 						}
-						
+
 						unsigned int remaining_blocks_to_consume = physical_block_consumption_goal;
 						for (int valid_pages_in_block = pages_no_per_block; valid_pages_in_block >= 0; valid_pages_in_block--) {
 							unsigned int block_no_with_x_valid_page = (unsigned int)(adjusted_steady_state_distribution[valid_pages_in_block] * physical_block_consumption_goal);
@@ -1422,7 +1422,7 @@ namespace SSD_Components
 	{
 		return this->domains[stream_id]->Total_logical_pages_no;
 	}
-	
+
 	inline NVM::FlashMemory::Physical_Page_Address Address_Mapping_Unit_Page_Level::Convert_ppa_to_address(const PPA_type ppa)
 	{
 		NVM::FlashMemory::Physical_Page_Address target;
@@ -1480,7 +1480,7 @@ namespace SSD_Components
 			}
 			domain->CMT->Reserve_slot_for_lpn(stream_id, lpa);
 			domain->CMT->Insert_new_mapping_info(stream_id, lpa, NO_PPA, UNWRITTEN_LOGICAL_PAGE);
-			
+
 			return true;
 		}
 
@@ -1542,7 +1542,7 @@ namespace SSD_Components
 			data from GlobalMappingTable (which actually must be stored on flash)*/
 			domain->CMT->Insert_new_mapping_info(stream_id, lpa,
 				domain->GlobalMappingTable[lpa].PPA, domain->GlobalMappingTable[lpa].WrittenStateBitmap);
-			
+
 			return true;
 		}
 
@@ -1566,7 +1566,7 @@ namespace SSD_Components
 		}
 		domain->CMT->Reserve_slot_for_lpn(stream_id, lpa);
 		generate_flash_read_request_for_mapping_data(stream_id, lpa);//consult GTD and create read transaction
-		
+
 		return false;
 	}
 
@@ -1777,8 +1777,8 @@ namespace SSD_Components
 					MVPN_type mpvn = (MVPN_type)flash_controller->Get_metadata(addr.ChannelID, addr.ChipID, addr.DieID, addr.PlaneID, addr.BlockID, addr.PageID);
 					if (domains[block->Stream_id]->GlobalTranslationDirectory[mpvn].MPPN != Convert_address_to_ppa(addr)) {
 						PRINT_ERROR("Inconsistency in the global translation directory when locking an MPVN!")
-						Set_barrier_for_accessing_mvpn(block->Stream_id, mpvn);
 					}
+					Set_barrier_for_accessing_mvpn(block->Stream_id, mpvn);
 				} else {
 					LPA_type lpa = flash_controller->Get_metadata(addr.ChannelID, addr.ChipID, addr.DieID, addr.PlaneID, addr.BlockID, addr.PageID);
 					LPA_type ppa = domains[block->Stream_id]->GlobalMappingTable[lpa].PPA;
@@ -1845,7 +1845,7 @@ namespace SSD_Components
 			Stats::Total_flash_reads_for_mapping_per_stream[stream_id]++;
 
 			handle_transaction_serviced_signal_from_PHY(readTR);
-			
+
 			delete readTR;
 		}
 

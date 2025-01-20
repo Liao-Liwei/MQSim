@@ -31,7 +31,7 @@ namespace SSD_Components
 				this->back_pressure_buffer_depth = new unsigned int[1];
 				this->back_pressure_buffer_depth[0] = 0;
 				shared_dram_request_queue = true;
-				break; 
+				break;
 			}
 			case SSD_Components::Cache_Sharing_Mode::EQUAL_PARTITIONING:
 				per_stream_cache = new Data_Cache_Flash*[stream_count];
@@ -52,7 +52,7 @@ namespace SSD_Components
 
 		bloom_filter = new std::set<LPA_type>[stream_count];
 	}
-	
+
 	Data_Cache_Manager_Flash_Advanced::~Data_Cache_Manager_Flash_Advanced()
 	{
 		switch (sharing_mode)
@@ -84,8 +84,8 @@ namespace SSD_Components
 			default:
 				break;
 		}
-		
-		delete per_stream_cache;
+
+		delete[] per_stream_cache;
 		delete[] dram_execution_queue;
 		delete[] waiting_user_requests_queue_for_dram_free_slot;
 		delete[] bloom_filter;
@@ -278,7 +278,7 @@ namespace SSD_Components
 			queue_id = 0;
 		}
 
-		while (it != user_request->Transaction_list.end() 
+		while (it != user_request->Transaction_list.end()
 			&& (back_pressure_buffer_depth[queue_id] + cache_eviction_read_size_in_sectors + flash_written_back_write_size_in_sectors) < back_pressure_buffer_max_depth) {
 			NVM_Transaction_Flash_WR* tr = (NVM_Transaction_Flash_WR*)(*it);
 			//If the logical address already exists in the cache
@@ -316,7 +316,7 @@ namespace SSD_Components
 			}
 			user_request->Transaction_list.erase(it++);
 		}
-		
+
 		user_request->Sectors_serviced_from_cache += dram_write_size_in_sectors;//This is very important update. It is used to decide when all data sectors of a user request are serviced
 		back_pressure_buffer_depth[queue_id] += cache_eviction_read_size_in_sectors + flash_written_back_write_size_in_sectors;
 
@@ -344,8 +344,8 @@ namespace SSD_Components
 		if (writeback_transactions.size() > 0) {
 					static_cast<FTL*>(nvm_firmware)->Address_Mapping_Unit->Translate_lpa_to_ppa_and_dispatch(writeback_transactions);
 		}
-		
-		//Reset control data structures used for hot/cold separation 
+
+		//Reset control data structures used for hot/cold separation
 		if (Simulator->Time() > next_bloom_filter_reset_milestone) {
 			bloom_filter[user_request->Stream_id].clear();
 			next_bloom_filter_reset_milestone = Simulator->Time() + bloom_filter_reset_step;
@@ -382,7 +382,7 @@ namespace SSD_Components
 					break;
 				case Caching_Mode::READ_CACHE:
 				case Caching_Mode::WRITE_READ_CACHE:
-				{					
+				{
 					if (((Data_Cache_Manager_Flash_Advanced*)_my_instance)->per_stream_cache[transaction->Stream_id]->Exists(transaction->Stream_id, transaction->LPA)) {
 						/*MQSim should get rid of writting stale data to the cache.
 						* This situation may result from out-of-order transaction execution*/
@@ -462,7 +462,7 @@ namespace SSD_Components
 							((Data_Cache_Manager_Flash_Advanced*)_my_instance)->per_stream_cache[transaction->Stream_id]->Remove_slot(transaction->Stream_id, ((NVM_Transaction_Flash_WR*)transaction)->LPA);
 						}
 					}
-					
+
 					auto user_request = ((Data_Cache_Manager_Flash_Advanced*)_my_instance)->waiting_user_requests_queue_for_dram_free_slot[sharing_id].begin();
 					while (user_request != ((Data_Cache_Manager_Flash_Advanced*)_my_instance)->waiting_user_requests_queue_for_dram_free_slot[sharing_id].end())
 					{
@@ -496,7 +496,7 @@ namespace SSD_Components
 							if (_my_instance->back_pressure_buffer_depth[sharing_id] >= _my_instance->back_pressure_buffer_max_depth)
 								break;
 						}
-						
+
 						if (cache_eviction_read_size_in_sectors > 0)
 						{
 							Memory_Transfer_Info* read_transfer_info = new Memory_Transfer_Info;

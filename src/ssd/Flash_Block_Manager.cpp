@@ -21,7 +21,7 @@ namespace SSD_Components
 	{
 		PlaneBookKeepingType *plane_record = &plane_manager[page_address.ChannelID][page_address.ChipID][page_address.DieID][page_address.PlaneID];
 		plane_record->Valid_pages_count++;
-		plane_record->Free_pages_count--;		
+		plane_record->Free_pages_count--;
 		page_address.BlockID = plane_record->Data_wf[stream_id]->BlockID;
 		page_address.PageID = plane_record->Data_wf[stream_id]->Current_page_write_index++;
 		program_transaction_issued(page_address);
@@ -40,11 +40,11 @@ namespace SSD_Components
 	{
 		PlaneBookKeepingType *plane_record = &plane_manager[page_address.ChannelID][page_address.ChipID][page_address.DieID][page_address.PlaneID];
 		plane_record->Valid_pages_count++;
-		plane_record->Free_pages_count--;		
+		plane_record->Free_pages_count--;
 		page_address.BlockID = plane_record->GC_wf[stream_id]->BlockID;
 		page_address.PageID = plane_record->GC_wf[stream_id]->Current_page_write_index++;
 
-		
+
 		//The current write frontier block is written to the end
 		if (plane_record->GC_wf[stream_id]->Current_page_write_index == pages_no_per_block) {
 			//Assign a new write frontier block
@@ -53,13 +53,14 @@ namespace SSD_Components
 		}
 		plane_record->Check_bookkeeping_correctness(page_address);
 	}
-	
+
+	//NOTE: 
 	void Flash_Block_Manager::Allocate_Pages_in_block_and_invalidate_remaining_for_preconditioning(const stream_id_type stream_id, const NVM::FlashMemory::Physical_Page_Address& plane_address, std::vector<NVM::FlashMemory::Physical_Page_Address>& page_addresses)
 	{
 		if(page_addresses.size() > pages_no_per_block) {
 			PRINT_ERROR("Error while precondition a physical block: the size of the address list is larger than the pages_no_per_block!")
 		}
-			
+
 		PlaneBookKeepingType *plane_record = &plane_manager[plane_address.ChannelID][plane_address.ChipID][plane_address.DieID][plane_address.PlaneID];
 		if (plane_record->Data_wf[stream_id]->Current_page_write_index > 0) {
 			PRINT_ERROR("Illegal operation: the Allocate_Pages_in_block_and_invalidate_remaining_for_preconditioning function should be executed for an erased block!")
