@@ -1,9 +1,8 @@
 CC        := g++
 LD        := g++
-# CC        := clang++
-# LD        := clang++
-# CC_FLAGS := -std=c++11 -O3 -g
-CC_FLAGS := -std=c++11 -O0 -g -fsanitize=address
+
+CC_FLAGS := -std=c++11 -O3 -g
+# CC_FLAGS := -std=c++11 -O0 -g -fsanitize=address
 # CC_FLAGS := -std=c++11 -O0 -g
 
 MODULES   := exec host nvm_chip nvm_chip/flash_memory sim ssd utils
@@ -28,13 +27,16 @@ endef
 all: checkdirs MQSim
 
 MQSim: $(OBJ)
-	$(LD) $(LD_FLAGS) $^ -o $@
+	$(LD) $^ -o $@
+
+#$(LD) $(LD_FLAGS) $^ -o $@
 
 checkdirs: $(BUILD_DIR)
 
 $(BUILD_DIR):
-	mkdir -p $@
+	mkdir "$@"
 
+#mkdir -p $@
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f MQSim
